@@ -14,12 +14,13 @@
     limitations under the License.
  */
 define([
+    'dojo/_base/array',
     'dojo/_base/declare',
     'dojo/_base/lang',
     'dojo/store/util/QueryResults',
     'dojo/Deferred'
     /*=====, "dojo/store/api/Store" =====*/
-], function (declare, lang, QueryResults, Deferred /*=====, Store =====*/) {
+], function (array, declare, lang, QueryResults, Deferred /*=====, Store =====*/) {
 
     // No base class, but for purposes of documentation, the base class is dojo/store/api/Store
     var base = null;
@@ -55,12 +56,12 @@ define([
             console.assert(this.api, 'API not defined');
         },
 
-        _execute: function (fn) {
+        _execute: function (request) {
             //  summary:
             //      Executes an endpoints request and returns a promise.
 
             var deferred = new Deferred(); // No cancel function, as we can't cancel the request.
-            fn.execute(function (response) {
+            request.execute(function (response) {
                 if (response.error) {
                     deferred.reject(response.error);
                     return;
@@ -152,7 +153,6 @@ define([
             // returns: dojo/store/api/Store.QueryResults
             //      The results of the query, extended with iterative methods.
 
-            // TODO handle options
             queryOptions = {};
             if (options) {
                 if (options.start) {
@@ -162,9 +162,10 @@ define([
                     queryOptions.limit = options.count;
                 }
                 if (options.sort) {
-                    // options.sort is structured like:
-                    //   [ { attribute: "attribute", descending: true } ]
-                    // TODO: queryOptions.order = '';
+                    queryOptions.order = array.map(options.sort, function (item) {
+                        var prefix = item.descending ? '-' : '';
+                        return prefix + item.attribute;
+                    }).join(',');
                 }
             }
             var fn = this.api.list(queryOptions);
